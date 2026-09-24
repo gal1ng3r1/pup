@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Золотой Кликер — с Админ-панелью</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/rubik@5.0.18/index.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/rubik@5.0.18/700.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+  input, select { user-select: text; -webkit-user-select: text; }
+
+  :root {
+    --bg1: #1a1033;
+    --bg2: #2d1b52;
+    --gold: #ffc83d;
+    --card: rgba(255,255,255,0.06);
+    --card-border: rgba(255,255,255,0.12);
+    --accent: #a78bfa;
+    --red: #f87171;
+    --green: #4ade80;
+  }
+
+  body {
+    font-family: 'Rubik', sans-serif;
+    background: radial-gradient(ellipse at 50% 0%, var(--bg2) 0%, var(--bg1) 60%, #0d0720 100%);
+    min-height: 100vh;
+    color: #fff;
+    overflow-x: hidden;
+  }
+
+  .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .star { position: absolute; border-radius: 50%; background: #fff; animation: twinkle 3s infinite ease-in-out; }
+  @keyframes twinkle { 0%,100%{opacity:.15} 50%{opacity:.7} }
+
+  .game {
+    position: relative; z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 20px 40px;
+  }
+
+  header { grid-column: 1 / -1; text-align: center; position: relative; }
+  header h1 {
+    font-size: clamp(28px, 4vw, 42px); font-weight: 700;
+    background: linear-gradient(180deg, #ffe28a, var(--gold), #c98a00);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 40px rgba(255,200,61,0.25); letter-spacing: 1px;
+  }
+  header p { color: rgba(255,255,255,0.5); font-size: 14px; margin-top: 4px; }
+
+  /* ===== Main panel ===== */
+  .main {
+    display: flex; flex-direction: column; align-items: center;
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 24px; padding: 28px 20px; backdrop-filter: blur(8px);
+  }
+  .score { font-size: clamp(30px, 4.5vw, 48px); font-weight: 700; color: var(--gold); text-shadow: 0 2px 20px rgba(255,200,61,0.4); line-height: 1.1; word-break: break-word; text-align: center; }
+  .score-label { color: rgba(255,255,255,0.55); font-size: 14px; margin-top: 2px; }
+  .frenzy-badge {
+    display: none; margin-top: 8px; padding: 4px 14px; border-radius: 99px;
+    background: linear-gradient(90deg, #f59e0b, #ef4444); font-size: 12px; font-weight: 700;
+    animation: pulseGlow 1s infinite;
+  }
+  .frenzy-badge.on { display: inline-block; }
+
+  .stats-row { display: flex; gap: 14px; margin: 18px 0 10px; flex-wrap: wrap; justify-content: center; }
+  .stat { background: rgba(0,0,0,0.25); border: 1px solid var(--card-border); border-radius: 14px; padding: 10px 18px; text-align: center; min-width: 120px; }
+  .stat b { display: block; font-size: 18px; color: #fff; }
+  .stat span { font-size: 11px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: .5px; }
+
+  .coin-wrap { position: relative; margin: 26px 0 10px; cursor: pointer; }
+  .coin-glow { position: absolute; inset: -40px; background: radial-gradient(circle, rgba(255,200,61,0.28) 0%, transparent 65%); border-radius: 50%; animation: pulseGlow 2.5s infinite ease-in-out; pointer-events: none; }
+  @keyframes pulseGlow { 0%,100%{transform:scale(1);opacity:.8} 50%{transform:scale(1.08);opacity:1} }
+
+  .coin { width: clamp(200px, 32vw, 260px); height: clamp(200px, 32vw, 260px); display: block; transition: transform 0.08s ease; filter: drop-shadow(0 10px 30px rgba(0,0,0,0.5)); position: relative; }
+  .coin-wrap.pop .coin { animation: pop .12s ease; }
+  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(.9)} 100%{transform:scale(1)} }
+
+  .float-text { position: absolute; font-weight: 700; font-size: 22px; color: var(--gold); text-shadow: 0 2px 8px rgba(0,0,0,0.6); pointer-events: none; animation: floatUp 1s ease-out forwards; z-index: 10; white-space: nowrap; }
+  @keyframes floatUp { 0% { transform: translate(-50%, 0) scale(1); opacity: 1; } 100% { transform: translate(-50%, -90px) scale(1.3); opacity: 0; } }
+
+  .progress-block { width: 100%; max-width: 380px; margin-top: 22px; }
+  .progress-head { display: flex; justify-content: space-between; font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 6px; }
+  .progress-bar { height: 10px; background: rgba(0,0,0,0.35); border-radius: 99px; overflow: hidden; border: 1px solid var(--card-border); }
+  .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), #f472b6, var(--gold)); border-radius: 99px; transition: width .4s ease; }
+
+  /* ===== Shop ===== */
+  .shop { background: var(--card); border: 1px solid var(--card-border); border-radius: 24px; padding: 20px; backdrop-filter: blur(8px); display: flex; flex-direction: column; max-height: 760px; }
+  .shop h2 { font-size: 18px; margin-bottom: 4px; }
+  .shop .sub { font-size: 12px; color: rgba(255,255,255,0.45); margin-bottom: 14px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+  .tab { flex: 1; padding: 8px; text-align: center; font-size: 13px; background: rgba(0,0,0,0.25); border: 1px solid var(--card-border); border-radius: 10px; cursor: pointer; color: rgba(255,255,255,0.6); transition: all .2s; }
+  .tab.active { background: linear-gradient(135deg, rgba(167,139,250,.3), rgba(244,114,182,.25)); color: #fff; border-color: var(--accent); }
+
+  .buy-amount { display: flex; gap: 6px; margin-bottom: 14px; align-items: center; }
+  .buy-amount .ba-label { font-size: 11px; color: rgba(255,255,255,.45); margin-right: 2px; text-transform: uppercase; letter-spacing: .5px; }
+  .ba-btn {
+    flex: 1; padding: 6px 4px; text-align: center; font-size: 12px; font-weight: 700;
+    background: rgba(0,0,0,0.25); border: 1px solid var(--card-border);
+    border-radius: 8px; cursor: pointer; color: rgba(255,255,255,0.6); transition: all .18s;
+    font-family: inherit;
+  }
+  .ba-btn:hover { border-color: rgba(255,200,61,.5); color: #fff; }
+  .ba-btn.active {
+    background: linear-gradient(135deg, rgba(255,200,61,.25), rgba(224,159,0,.2));
+    border-color: var(--gold); color: var(--gold);
+  }
+
+  .items { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px; }
+  .items::-webkit-scrollbar { width: 6px; }
+  .items::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 99px; }
+
+  .item { display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.28); border: 1px solid var(--card-border); border-radius: 14px; padding: 10px 12px; cursor: pointer; transition: all .18s; }
+  .item:hover { border-color: rgba(255,200,61,.5); transform: translateX(2px); background: rgba(0,0,0,.4); }
+  .item.locked { opacity: .45; cursor: not-allowed; }
+  .item.locked:hover { transform: none; border-color: var(--card-border); }
+  .item.bought-flash { animation: buyFlash .5s ease; }
+  @keyframes buyFlash { 0%{background:rgba(74,222,128,.35)} 100%{background:rgba(0,0,0,.28)} }
+
+  .item-icon { width: 46px; height: 46px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; background: linear-gradient(135deg, rgba(167,139,250,.25), rgba(255,200,61,.15)); border: 1px solid var(--card-border); border-radius: 12px; position: relative; }
+  .qty-badge {
+    position: absolute; top: -7px; right: -7px;
+    background: linear-gradient(135deg, var(--gold), #e09f00);
+    color: #3d2600; font-size: 10px; font-weight: 700;
+    padding: 2px 6px; border-radius: 99px; border: 1px solid rgba(0,0,0,.3);
+    box-shadow: 0 2px 6px rgba(0,0,0,.4); white-space: nowrap;
+  }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name { font-size: 14px; font-weight: 700; }
+  .item-desc { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+  .item-cost { font-size: 13px; color: var(--gold); font-weight: 700; margin-top: 3px; }
+  .item-count { font-size: 20px; font-weight: 700; color: rgba(255,255,255,0.25); min-width: 30px; text-align: right; }
+
+  .reset-btn {
+    margin-top: 14px; background: rgba(248,113,113,.08);
+    border: 1px solid rgba(248,113,113,.35); color: var(--red);
+    font-family: inherit; padding: 10px; border-radius: 10px;
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s; width: 100%;
+  }
+  .reset-btn:hover { background: rgba(248,113,113,.22); border-color: var(--red); transform: translateY(-1px); }
+  .reset-btn:active { transform: scale(.98); }
+
+  /* ===== Toasts ===== */
+  #toasts { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 200; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+  .toast { background: linear-gradient(135deg, #312e81, #4c1d95); border: 1px solid var(--accent); padding: 12px 22px; border-radius: 14px; font-size: 14px; font-weight: 700; box-shadow: 0 8px 30px rgba(0,0,0,.5); animation: toastIn .35s ease, toastOut .4s ease 2.6s forwards; text-align:center; }
+  .toast small { display: block; font-weight: 400; font-size: 11px; color: rgba(255,255,255,.6); margin-top: 2px; }
+  @keyframes toastIn { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+  @keyframes toastOut { to{transform:translateY(20px);opacity:0} }
+
+  .golden { position: fixed; width: 56px; height: 56px; z-index: 50; cursor: pointer; animation: goldFloat 3s ease-in-out infinite, goldFade 8s linear forwards; filter: drop-shadow(0 0 14px rgba(255,215,0,.9)); }
+  @keyframes goldFloat { 0%,100%{transform:translateY(0) rotate(-8deg)} 50%{transform:translateY(-18px) rotate(8deg)} }
+  @keyframes goldFade { 0%{opacity:0} 8%{opacity:1} 88%{opacity:1} 100%{opacity:0} }
+
+  /* ===== CUSTOM CONFIRM MODAL ===== */
+  .confirm-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(5,3,15,0.75); backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .confirm-overlay.open { display: flex; }
+  .confirm-box {
+    width: 100%; max-width: 400px;
+    background: linear-gradient(160deg, #2a1a4a, #18102e);
+    border: 1px solid rgba(248,113,113,.45);
+    border-radius: 20px;
+    padding: 26px 24px 20px;
+    text-align: center;
+    box-shadow: 0 20px 80px rgba(0,0,0,.7);
+    animation: toastIn .25s ease;
+  }
+  .confirm-icon { font-size: 40px; margin-bottom: 10px; }
+  .confirm-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .confirm-text { font-size: 13px; color: rgba(255,255,255,.6); line-height: 1.5; margin-bottom: 20px; }
+  .confirm-buttons { display: flex; gap: 10px; }
+  .confirm-buttons button {
+    flex: 1; padding: 12px; border-radius: 12px; font-family: inherit;
+    font-size: 14px; font-weight: 700; cursor: pointer; transition: all .2s;
+  }
+  .c-cancel { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2); color: #fff; }
+  .c-cancel:hover { background: rgba(255,255,255,.16); }
+  .c-ok { background: rgba(248,113,113,.15); border: 1px solid rgba(248,113,113,.5); color: var(--red); }
+  .c-ok:hover { background: rgba(248,113,113,.35); color: #fff; }
+
+  /* ===== ADMIN ===== */
+  .admin-fab {
+    position: fixed; right: 20px; bottom: 20px; z-index: 150;
+    width: 52px; height: 52px; border-radius: 16px; border: 1px solid rgba(255,255,255,.2);
+    background: linear-gradient(135deg, #4c1d95, #1e1b4b);
+    color: #fff; font-size: 22px; cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .admin-fab:hover { transform: scale(1.08) rotate(15deg); box-shadow: 0 8px 30px rgba(167,139,250,.5); }
+
+  .admin-overlay {
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(5,3,15,0.7); backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .admin-overlay.open { display: flex; animation: toastIn .25s ease; }
+  .admin-panel {
+    width: 100%; max-width: 860px; max-height: 88vh;
+    background: linear-gradient(160deg, #221640, #160e2e);
+    border: 1px solid rgba(167,139,250,.4);
+    border-radius: 22px;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 80px rgba(0,0,0,.7);
+    overflow: hidden;
+  }
+  .admin-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 22px; border-bottom: 1px solid rgba(255,255,255,.08);
+    background: rgba(167,139,250,.08);
+  }
+  .admin-head h2 { font-size: 19px; display: flex; align-items: center; gap: 10px; }
+  .admin-head h2 span.badge { font-size: 10px; background: var(--accent); color: #1e1b4b; padding: 3px 8px; border-radius: 99px; font-weight: 700; }
+  .admin-close { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); color: #fff; width: 34px; height: 34px; border-radius: 10px; font-size: 16px; cursor: pointer; transition: all .2s; }
+  .admin-close:hover { background: rgba(248,113,113,.3); border-color: var(--red); }
+
+  .admin-tabs { display: flex; gap: 8px; padding: 14px 22px 0; }
+  .admin-tab { padding: 9px 16px; font-size: 13px; border-radius: 10px 10px 0 0; cursor: pointer; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-bottom: none; color: rgba(255,255,255,.55); }
+  .admin-tab.active { background: rgba(167,139,250,.2); color: #fff; border-color: var(--accent); font-weight: 700; }
+
+  .admin-body { padding: 18px 22px 22px; overflow-y: auto; border-top: 1px solid rgba(167,139,250,.3); }
+  .admin-body::-webkit-scrollbar { width: 6px; }
+  .admin-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 99px; }
+
+  .admin-section { display: none; }
+  .admin-section.active { display: block; }
+
+  .settings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .setting-card { background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 12px 14px; }
+  .setting-card label { display: block; font-size: 11px; color: rgba(255,255,255,.55); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .setting-card input[type=number], .setting-card input[type=text] {
+    width: 100%; background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.15);
+    border-radius: 8px; padding: 8px 10px; color: #fff; font-family: inherit; font-size: 14px;
+    outline: none; transition: border-color .2s;
+  }
+  .setting-card input:focus { border-color: var(--accent); }
+
+  .admin-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .a-btn { font-family: inherit; padding: 10px 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s; }
+  .a-btn:hover { background: rgba(255,255,255,.16); transform: translateY(-1px); }
+  .a-btn.green { background: rgba(74,222,128,.15); border-color: rgba(74,222,128,.5); color: var(--green); }
+  .a-btn.green:hover { background: rgba(74,222,128,.3); }
+  .a-btn.red { background: rgba(248,113,113,.12); border-color: rgba(248,113,113,.4); color: var(--red); }
+  .a-btn.red:hover { background: rgba(248,113,113,.28); }
+  .a-btn.purple { background: rgba(167,139,250,.15); border-color: rgba(167,139,250,.5); color: #c4b5fd; }
+  .a-btn.purple:hover { background: rgba(167,139,250,.3); }
+
+  .grant-row { display: flex; gap: 10px; margin-top: 16px; align-items: center; flex-wrap: wrap; }
+  .grant-row input { flex: 1; min-width: 160px; background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.15); border-radius: 10px; padding: 10px 14px; color: var(--gold); font-family: inherit; font-size: 15px; font-weight: 700; outline: none; }
+  .grant-row input:focus { border-color: var(--gold); }
+
+  .up-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px; flex-wrap: wrap; }
+  .up-toolbar .hint { font-size: 12px; color: rgba(255,255,255,.45); }
+
+  .up-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+  .up-table th { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: rgba(255,255,255,.4); text-align: left; padding: 0 6px 4px; font-weight: 400; }
+  .up-row td { background: rgba(0,0,0,.3); padding: 8px 6px; border-top: 1px solid rgba(255,255,255,.08); border-bottom: 1px solid rgba(255,255,255,.08); }
+  .up-row td:first-child { border-radius: 12px 0 0 12px; border-left: 1px solid rgba(255,255,255,.08); }
+  .up-row td:last-child { border-radius: 0 12px 12px 0; border-right: 1px solid rgba(255,255,255,.08); }
+  .up-row.disabled td { opacity: .4; }
+  .up-row input[type=text], .up-row input[type=number] {
+    width: 100%; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.15);
+    border-radius: 8px; padding: 7px 8px; color: #fff; font-family: inherit; font-size: 13px; outline: none;
+  }
+  .up-row input:focus { border-color: var(--accent); }
+  .up-row .ic-in { width: 44px; text-align: center; font-size: 17px; }
+  .up-row .num-in { width: 84px; }
+  .up-del { background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.35); color: var(--red); border-radius: 8px; width: 32px; height: 32px; cursor: pointer; font-size: 14px; transition: all .2s; }
+  .up-del:hover { background: rgba(248,113,113,.35); }
+  .switch { position: relative; width: 40px; height: 22px; display: inline-block; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: rgba(255,255,255,.15); border-radius: 99px; cursor: pointer; transition: .2s; }
+  .slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .switch input:checked + .slider { background: var(--green); }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+
+  .units-hint { margin-top: 16px; background: rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px 14px; font-size: 12px; color: rgba(255,255,255,.55); line-height: 1.7; }
+  .units-hint b { color: var(--gold); }
+
+  @media (max-width: 860px) {
+    .game { grid-template-columns: 1fr; }
+    .shop { max-height: none; }
+    .up-table, .up-row, .up-toolbar { font-size: 12px; }
+    .admin-panel { max-height: 92vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="game">
+  <header>
+    <h1>🪙 ЗОЛОТОЙ КЛИКЕР</h1>
+    <p>Кликай по монете, покупай улучшения и стань богачом!</p>
+  </header>
+
+  <section class="main">
+    <div class="score" id="score">0</div>
+    <div class="score-label">золотых монет</div>
+    <div class="frenzy-badge" id="frenzyBadge">✨ БЕЗУМИЕ x<span id="frenzyMultLabel">7</span> — <span id="frenzyTime">0</span>с</div>
+
+    <div class="stats-row">
+      <div class="stat"><b id="perClick">+1</b><span>за клик</span></div>
+      <div class="stat"><b id="perSec">0</b><span>в секунду</span></div>
+      <div class="stat"><b id="totalClicks">0</b><span>всего кликов</span></div>
+    </div>
+
+    <div class="coin-wrap" id="coinWrap">
+      <div class="coin-glow"></div>
+      <svg class="coin" id="coin" viewBox="0 0 200 200">
+        <defs>
+          <radialGradient id="face" cx="35%" cy="30%" r="80%">
+            <stop offset="0%" stop-color="#ffe9a3"/><stop offset="45%" stop-color="#ffc83d"/><stop offset="100%" stop-color="#c98a00"/>
+          </radialGradient>
+          <radialGradient id="gemg" cx="35%" cy="30%" r="80%">
+            <stop offset="0%" stop-color="#ff8a8a"/><stop offset="60%" stop-color="#dc2626"/><stop offset="100%" stop-color="#7f1d1d"/>
+          </radialGradient>
+          <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#e0a500"/><stop offset="100%" stop-color="#8a5d00"/>
+          </linearGradient>
+        </defs>
+        <circle cx="100" cy="104" r="92" fill="#6b4400" opacity=".5"/>
+        <circle cx="100" cy="100" r="92" fill="url(#rim)"/>
+        <circle cx="100" cy="100" r="80" fill="url(#face)" stroke="#a57300" stroke-width="3"/>
+        <circle cx="100" cy="100" r="66" fill="none" stroke="#b8860b" stroke-width="2" stroke-dasharray="4 6" opacity=".6"/>
+        <g stroke="#b07d00" stroke-width="2" fill="none" opacity=".55">
+          <path d="M100 20 L100 34 M100 166 L100 180 M20 100 L34 100 M166 100 L180 100"/>
+          <path d="M43 43 L53 53 M147 147 L157 157 M157 43 L147 53 M53 147 L43 157"/>
+        </g>
+        <circle cx="100" cy="100" r="30" fill="url(#gemg)" stroke="#ffd27a" stroke-width="3"/>
+        <path d="M86 88 L100 78 L114 88 L110 108 L90 108 Z" fill="#ff6b6b" opacity=".55"/>
+        <ellipse cx="90" cy="88" rx="8" ry="5" fill="#fff" opacity=".65" transform="rotate(-25 90 88)"/>
+        <path d="M62 52 Q78 38 100 34" stroke="#fff" stroke-width="7" stroke-linecap="round" fill="none" opacity=".35"/>
+        <text x="100" y="176" text-anchor="middle" font-family="Rubik, sans-serif" font-weight="700" font-size="15" fill="#8a5d00" opacity=".8">ЗОЛОТО</text>
+      </svg>
+    </div>
+
+    <div class="progress-block">
+      <div class="progress-head">
+        <span>Уровень: <b id="level">1</b></span>
+        <span id="levelProgress">0 / 100</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+  </section>
+
+  <aside class="shop">
+    <h2>🛒 Магазин</h2>
+    <div class="sub">Покупай улучшения, чтобы зарабатывать больше</div>
+    <div class="tabs">
+      <div class="tab active" data-tab="auto" id="tabAuto">⚙️ Автодоход</div>
+      <div class="tab" data-tab="click" id="tabClick">👆 Сила клика</div>
+    </div>
+    <div class="buy-amount" id="buyAmount">
+      <span class="ba-label">Покупка:</span>
+      <button class="ba-btn active" data-amt="1">x1</button>
+      <button class="ba-btn" data-amt="10">x10</button>
+      <button class="ba-btn" data-amt="max">MAX</button>
+    </div>
+    <div class="items" id="items"></div>
+    <button class="reset-btn" id="resetBtn">🔄 Сбросить игру</button>
+  </aside>
+</div>
+
+<button class="admin-fab" id="adminFab" title="Админ-панель (Ctrl+Shift+A)">🔧</button>
+
+<!-- CUSTOM CONFIRM MODAL -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirmIcon">⚠️</div>
+    <div class="confirm-title" id="confirmTitle">Вы уверены?</div>
+    <div class="confirm-text" id="confirmText"></div>
+    <div class="confirm-buttons">
+      <button class="c-cancel" id="confirmCancel">Отмена</button>
+      <button class="c-ok" id="confirmOk">Подтвердить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-panel">
+    <div class="admin-head">
+      <h2>🛠️ Админ-панель <span class="badge">ADMIN</span></h2>
+      <button class="admin-close" id="adminClose">✕</button>
+    </div>
+    <div class="admin-tabs">
+      <div class="admin-tab active" data-sec="settings">⚙️ Настройки игры</div>
+      <div class="admin-tab" data-sec="auto">🤖 Кнопки автодохода</div>
+      <div class="admin-tab" data-sec="click">👆 Кнопки клика</div>
+    </div>
+    <div class="admin-body">
+      <div class="admin-section active" id="sec-settings">
+        <div class="settings-grid">
+          <div class="setting-card"><label>Базовая сила клика</label><input type="number" min="1" id="cfgBaseClick"></div>
+          <div class="setting-card"><label>Золотая монета: мин. интервал (сек)</label><input type="number" min="5" id="cfgGoldMin"></div>
+          <div class="setting-card"><label>Золотая монета: макс. интервал (сек)</label><input type="number" min="5" id="cfgGoldMax"></div>
+          <div class="setting-card"><label>Множитель безумия (x)</label><input type="number" min="1" id="cfgFrenzyMult"></div>
+          <div class="setting-card"><label>Длительность безумия (сек)</label><input type="number" min="1" id="cfgFrenzyDur"></div>
+          <div class="setting-card"><label>Очки для 1 уровня</label><input type="number" min="10" id="cfgLevelBase"></div>
+          <div class="setting-card"><label>Рост стоимости уровня (x)</label><input type="number" min="1" step="0.05" id="cfgLevelGrowth"></div>
+          <div class="setting-card"><label>Максимум покупок в режиме MAX</label><input type="number" min="1" id="cfgMaxBuy"></div>
+        </div>
+        <div class="grant-row">
+          <input type="text" id="grantAmount" placeholder="Монеты: число или 1e21, 5e30...">
+          <button class="a-btn green" id="grantBtn">💰 Выдать монеты</button>
+        </div>
+        <div class="admin-actions">
+          <button class="a-btn purple" id="maxAllBtn">🎁 Купить все улучшения x10</button>
+          <button class="a-btn" id="saveCfgBtn">💾 Сохранить настройки</button>
+          <button class="a-btn red" id="resetCfgBtn">♻️ Сбросить настройки к дефолтным</button>
+          <button class="a-btn red" id="wipeBtn">🗑️ Полный сброс игры</button>
+        </div>
+        <div class="units-hint">
+          🔢 Числа не останавливаются на триллионе — счёт продолжается бесконечно:<br>
+          <b>млн</b> (10⁶) → <b>млрд</b> (10⁹) → <b>трлн</b> (10¹²) → <b>квадрлн</b> (10¹⁵) → <b>квинтлн</b> (10¹⁸) → <b>секстлн</b> (10²¹) → <b>септлн</b> (10²⁴) → <b>октлн</b> (10²⁷) → <b>нонлн</b> (10³⁰) → <b>дцлн</b> (10³³) → дальше научный формат <b>1.23e36</b>
+        </div>
+      </div>
+      <div class="admin-section" id="sec-auto">
+        <div class="up-toolbar">
+          <span class="hint">Регулируй стоимость, доход и рост цены кнопок автодохода</span>
+          <button class="a-btn purple" id="addAutoBtn">➕ Добавить кнопку</button>
+        </div>
+        <table class="up-table" id="autoTable"></table>
+      </div>
+      <div class="admin-section" id="sec-click">
+        <div class="up-toolbar">
+          <span class="hint">Регулируй стоимость, силу и рост цены кнопок клика</span>
+          <button class="a-btn purple" id="addClickBtn">➕ Добавить кнопку</button>
+        </div>
+        <table class="up-table" id="clickTable"></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ================= CUSTOM CONFIRM (работает в любом окружении) =================
+  const confirmOverlay = document.getElementById('confirmOverlay');
+  const confirmTitleEl = document.getElementById('confirmTitle');
+  const confirmTextEl  = document.getElementById('confirmText');
+  const confirmIconEl  = document.getElementById('confirmIcon');
+  const confirmOkBtn   = document.getElementById('confirmOk');
+  const confirmCancelBtn = document.getElementById('confirmCancel');
+  let confirmResolve = null;
+
+  function askConfirm(title, text, okLabel, icon){
+    return new Promise(resolve => {
+      confirmResolve = resolve;
+      confirmTitleEl.textContent = title || 'Вы уверены?';
+      confirmTextEl.textContent = text || '';
+      confirmOkBtn.textContent = okLabel || 'Подтвердить';
+      confirmIconEl.textContent = icon || '⚠️';
+      confirmOverlay.classList.add('open');
+    });
+  }
+  function closeConfirm(result){
+    confirmOverlay.classList.remove('open');
+    if (confirmResolve){ confirmResolve(result); confirmResolve = null; }
+  }
+  confirmOkBtn.addEventListener('click', () => closeConfirm(true));
+  confirmCancelBtn.addEventListener('click', () => closeConfirm(false));
+  confirmOverlay.addEventListener('click', e => { if (e.target === confirmOverlay) closeConfirm(false); });
+  document.addEventListener('keydown', e => {
+    if (confirmOverlay.classList.contains('open')){
+      if (e.key === 'Escape') closeConfirm(false);
+      if (e.key === 'Enter') closeConfirm(true);
+    }
+  });
+
+  // ================= CONFIG (admin-editable) =================
+  const DEFAULT_CFG = {
+    settings: {
+      baseClick: 1,
+      goldenMin: 45,
+      goldenMax: 105,
+      frenzyMult: 7,
+      frenzyDur: 15,
+      levelBase: 100,
+      levelGrowth: 1.6,
+      maxBuy: 1000
+    },
+    auto: [
+      { id:'cursor',  icon:'👆', name:'Автокурсор',       base:15,     growth:1.15, rate:1,    enabled:true },
+      { id:'miner',   icon:'⛏️', name:'Шахтёр',           base:120,    growth:1.15, rate:8,    enabled:true },
+      { id:'robot',   icon:'🤖', name:'Робот',            base:800,    growth:1.15, rate:45,   enabled:true },
+      { id:'factory', icon:'🏭', name:'Фабрика монет',    base:4500,   growth:1.15, rate:250,  enabled:true },
+      { id:'portal',  icon:'🌀', name:'Золотой портал',   base:26000,  growth:1.15, rate:1400, enabled:true },
+      { id:'galaxy',  icon:'🌌', name:'Галактика золота', base:180000, growth:1.15, rate:9000, enabled:true },
+      { id:'universe',icon:'🔮', name:'Вселенная монет',  base:2e6,    growth:1.15, rate:80000,  enabled:true },
+      { id:'multiverse',icon:'🌠',name:'Мультивселенная', base:5e7,    growth:1.15, rate:700000, enabled:true },
+      { id:'godforge', icon:'⚒️', name:'Кузница богов',   base:1e9,    growth:1.15, rate:6e6,    enabled:true },
+      { id:'infinite', icon:'♾️', name:'Бесконечность',    base:5e10,   growth:1.15, rate:8e7,    enabled:true }
+    ],
+    click: [
+      { id:'finger', icon:'🖐️', name:'Крепкий палец',    base:50,     growth:1.15, power:2,    enabled:true },
+      { id:'glove',  icon:'🧤', name:'Золотая перчатка', base:600,    growth:1.15, power:10,   enabled:true },
+      { id:'hammer', icon:'🔨', name:'Молот кузнеца',    base:5200,   growth:1.15, power:60,   enabled:true },
+      { id:'dragon', icon:'🐉', name:'Помощь дракона',   base:42000,  growth:1.15, power:400,  enabled:true },
+      { id:'titan',  icon:'⚡', name:'Сила титана',      base:350000, growth:1.15, power:2500, enabled:true },
+      { id:'star',   icon:'🌟', name:'Удар звезды',      base:4e6,    growth:1.15, power:20000,  enabled:true },
+      { id:'quasar', icon:'💫', name:'Квазар',           base:6e7,    growth:1.15, power:180000, enabled:true },
+      { id:'bigbang',icon:'🎆', name:'Большой взрыв',    base:1e9,    growth:1.15, power:2e6,    enabled:true }
+    ]
+  };
+
+  const DEFAULT_STATE = { coins:0, totalEarned:0, clicks:0, level:1, upgrades:{}, achievements:{}, goldenClicked:0, buyAmount:1 };
+
+  let cfg = loadCfg();
+  let state = loadState();
+  let activeTab = 'auto';
+  let buyAmount = (state.buyAmount === 10 || state.buyAmount === 'max') ? state.buyAmount : 1;
+  let goldenFrenzyUntil = 0;
+
+  function loadCfg(){
+    try {
+      const raw = localStorage.getItem('goldClickerAdminCfg');
+      if (raw){
+        const parsed = JSON.parse(raw);
+        return {
+          settings: Object.assign({}, DEFAULT_CFG.settings, parsed.settings || {}),
+          auto: Array.isArray(parsed.auto) && parsed.auto.length ? parsed.auto : JSON.parse(JSON.stringify(DEFAULT_CFG.auto)),
+          click: Array.isArray(parsed.click) && parsed.click.length ? parsed.click : JSON.parse(JSON.stringify(DEFAULT_CFG.click))
+        };
+      }
+    } catch(e){}
+    return JSON.parse(JSON.stringify(DEFAULT_CFG));
+  }
+  function saveCfg(){ try { localStorage.setItem('goldClickerAdminCfg', JSON.stringify(cfg)); } catch(e){} }
+
+  function loadState(){
+    try {
+      const raw = localStorage.getItem('goldClickerSave');
+      if (raw) return Object.assign({}, DEFAULT_STATE, JSON.parse(raw));
+    } catch(e){}
+    return JSON.parse(JSON.stringify(DEFAULT_STATE));
+  }
+  function saveState(){ state.buyAmount = buyAmount; try { localStorage.setItem('goldClickerSave', JSON.stringify(state)); } catch(e){} }
+
+  // ================= BIG NUMBER FORMATTING =================
+  const NUMBER_UNITS = [
+    { val: 1e33, name: 'дцлн' },
+    { val: 1e30, name: 'нонлн' },
+    { val: 1e27, name: 'октлн' },
+    { val: 1e24, name: 'септлн' },
+    { val: 1e21, name: 'секстлн' },
+    { val: 1e18, name: 'квинтлн' },
+    { val: 1e15, name: 'квадрлн' },
+    { val: 1e12, name: 'трлн' },
+    { val: 1e9,  name: 'млрд' },
+    { val: 1e6,  name: 'млн' }
+  ];
+
+  function fmt(n){
+    n = Math.floor(n);
+    if (!isFinite(n)) return '∞';
+    if (n < 0) return '-' + fmt(-n);
+    if (n < 1e6) return n.toLocaleString('ru-RU');
+    if (n >= 1e36){
+      const exp = Math.floor(Math.log10(n));
+      const mant = n / Math.pow(10, exp);
+      return mant.toFixed(2).replace('.', ',') + 'e' + exp;
+    }
+    for (const u of NUMBER_UNITS){
+      if (n >= u.val){
+        return (n / u.val).toFixed(2).replace('.', ',').replace(/,00$/, '') + ' ' + u.name;
+      }
+    }
+    return String(n);
+  }
+
+  function count(id){ return state.upgrades[id] || 0; }
+  function unitCost(u, ownedOffset){
+    return Math.max(1, Math.ceil(u.base * Math.pow(u.growth || 1.15, count(u.id) + (ownedOffset || 0))));
+  }
+  function costOf(u){ return unitCost(u, 0); }
+
+  function bulkCost(u, n){
+    let total = 0;
+    for (let i = 0; i < n; i++) total += unitCost(u, i);
+    return total;
+  }
+  function maxAffordable(u){
+    const cap = Math.max(1, cfg.settings.maxBuy || 1000);
+    let n = 0, total = 0;
+    while (n < cap){
+      const next = unitCost(u, n);
+      if (total + next > state.coins) break;
+      total += next;
+      n++;
+    }
+    return { n, cost: total };
+  }
+  function purchasePlan(u){
+    if (buyAmount === 'max'){
+      const m = maxAffordable(u);
+      if (m.n > 0) return m;
+      return { n: 1, cost: costOf(u) };
+    }
+    const n = buyAmount;
+    return { n, cost: bulkCost(u, n) };
+  }
+
+  function frenzyMult(){ return Date.now() < goldenFrenzyUntil ? cfg.settings.frenzyMult : 1; }
+  function perClick(){
+    let p = cfg.settings.baseClick;
+    cfg.click.forEach(u => { if (u.enabled !== false) p += count(u.id) * (u.power || 0); });
+    return Math.max(1, Math.floor(p * frenzyMult()));
+  }
+  function perSec(){
+    let s = 0;
+    cfg.auto.forEach(u => { if (u.enabled !== false) s += count(u.id) * (u.rate || 0); });
+    return Math.floor(s * frenzyMult());
+  }
+  function levelGoal(lvl){ return Math.max(1, Math.floor(cfg.settings.levelBase * Math.pow(cfg.settings.levelGrowth, lvl - 1))); }
+
+  const ACHIEVEMENTS = [
+    { id:'click100',   title:'🏆 Разминка',        desc:'100 кликов',            check: s => s.clicks >= 100 },
+    { id:'click1000',  title:'🏆 Палец-машина',    desc:'1000 кликов',           check: s => s.clicks >= 1000 },
+    { id:'coin1k',     title:'💰 Первая тысяча',   desc:'Заработай 1 000',       check: s => s.totalEarned >= 1000 },
+    { id:'coin100k',   title:'💰 Магнат',          desc:'Заработай 100 000',     check: s => s.totalEarned >= 100000 },
+    { id:'coin10m',    title:'👑 Император золота',desc:'Заработай 10 000 000',  check: s => s.totalEarned >= 10000000 },
+    { id:'coin1t',     title:'🌌 Триллионер',      desc:'Заработай 1 триллион',  check: s => s.totalEarned >= 1e12 },
+    { id:'coin1q',     title:'♾️ За гранью',        desc:'Заработай 1 квинтиллион',check: s => s.totalEarned >= 1e18 },
+    { id:'buy10',      title:'🛍️ Шопоголик',       desc:'10 покупок улучшений',  check: s => Object.values(s.upgrades).reduce((a,b)=>a+b,0) >= 10 },
+    { id:'level10',    title:'⭐ Уровень 10',      desc:'Достигни 10 уровня',    check: s => s.level >= 10 },
+    { id:'golden5',    title:'✨ Ловец удачи',     desc:'Поймай 5 золотых монет',check: s => s.goldenClicked >= 5 }
+  ];
+
+  // ================= DOM =================
+  const $ = id => document.getElementById(id);
+  const scoreEl = $('score'), perClickEl = $('perClick'), perSecEl = $('perSec'),
+        clicksEl = $('totalClicks'), levelEl = $('level'), progFill = $('progressFill'),
+        progText = $('levelProgress'), itemsEl = $('items'), coinWrap = $('coinWrap');
+
+  (function makeStars(){
+    const box = $('stars');
+    for (let i = 0; i < 70; i++){
+      const s = document.createElement('div');
+      s.className = 'star';
+      const size = Math.random() * 2.5 + 1;
+      s.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*3}s`;
+      box.appendChild(s);
+    }
+  })();
+
+  // ================= GAME RENDER =================
+  function renderStats(){
+    scoreEl.textContent = fmt(state.coins);
+    perClickEl.textContent = '+' + fmt(perClick());
+    perSecEl.textContent = fmt(perSec()) + '/с';
+    clicksEl.textContent = fmt(state.clicks);
+    levelEl.textContent = state.level;
+    const goal = levelGoal(state.level);
+    progFill.style.width = Math.min(100, state.totalEarned / goal * 100) + '%';
+    progText.textContent = fmt(state.totalEarned) + ' / ' + fmt(goal);
+
+    const badge = $('frenzyBadge');
+    if (Date.now() < goldenFrenzyUntil){
+      badge.classList.add('on');
+      $('frenzyMultLabel').textContent = cfg.settings.frenzyMult;
+      $('frenzyTime').textContent = Math.ceil((goldenFrenzyUntil - Date.now()) / 1000);
+    } else {
+      badge.classList.remove('on');
+    }
+  }
+
+  function descFor(u, type){
+    if (type === 'auto') return '+' + fmt(u.rate || 0) + ' монет/сек';
+    return '+' + fmt(u.power || 0) + ' к силе клика';
+  }
+
+  function renderShop(){
+    const list = (activeTab === 'auto' ? cfg.auto : cfg.click).filter(u => u.enabled !== false);
+    itemsEl.innerHTML = '';
+    if (!list.length){
+      itemsEl.innerHTML = '<div class="sub" style="text-align:center;padding:20px">Нет доступных кнопок.<br>Добавь их в админ-панели 🔧</div>';
+      return;
+    }
+    list.forEach(u => {
+      const plan = purchasePlan(u);
+      const affordable = state.coins >= plan.cost;
+      const div = document.createElement('div');
+      div.className = 'item' + (affordable ? '' : ' locked');
+
+      const qtyLabel = buyAmount === 'max'
+        ? (plan.n > 1 ? 'MAX · ' + plan.n + ' шт' : 'MAX · 1 шт')
+        : 'x' + plan.n;
+
+      div.innerHTML = `
+        <div class="item-icon">${u.icon || '🔘'}<span class="qty-badge">${qtyLabel}</span></div>
+        <div class="item-info">
+          <div class="item-name">${u.name}</div>
+          <div class="item-desc">${descFor(u, activeTab)}</div>
+          <div class="item-cost">🪙 ${fmt(plan.cost)}${plan.n > 1 ? ' <small style="opacity:.6;font-weight:400">(' + plan.n + ' шт)</small>' : ''}</div>
+        </div>
+        <div class="item-count">${count(u.id)}</div>`;
+      div.addEventListener('click', () => buyBulk(u, div));
+      itemsEl.appendChild(div);
+    });
+  }
+
+  function earn(amount){
+    state.coins += amount;
+    state.totalEarned += amount;
+    checkLevel();
+    checkAchievements();
+  }
+  function checkLevel(){
+    let guard = 0;
+    while (state.totalEarned >= levelGoal(state.level) && guard < 10000){
+      state.level++;
+      guard++;
+      if (state.level % 5 === 0) toast('⭐ Уровень ' + state.level + '!', 'Ты становишься богаче');
+    }
+  }
+
+  async function buyBulk(u, el){
+    let n, cost;
+    if (buyAmount === 'max'){
+      const m = maxAffordable(u);
+      if (m.n < 1){ shake(el); toast('⚠️ Недостаточно монет', 'Нужно минимум 🪙 ' + fmt(costOf(u))); return; }
+      n = m.n; cost = m.cost;
+    } else {
+      n = buyAmount;
+      cost = bulkCost(u, n);
+      if (state.coins < cost){
+        const m = maxAffordable(u);
+        const possible = Math.min(m.n, n);
+        if (possible < 1){ shake(el); return; }
+        const partCost = bulkCost(u, possible);
+        const ok = await askConfirm(
+          'Не хватает на x' + n,
+          `Хватает только на ${possible} шт за 🪙 ${fmt(partCost)}. Купить?`,
+          'Купить ' + possible + ' шт',
+          '🛍️'
+        );
+        if (!ok){ shake(el); return; }
+        n = possible;
+        cost = partCost;
+      }
+    }
+    state.coins -= cost;
+    state.upgrades[u.id] = count(u.id) + n;
+    el.classList.add('bought-flash');
+    if (n > 1) toast('🛍️ Куплено: ' + u.name, '+' + n + ' шт за 🪙 ' + fmt(cost));
+    renderShop(); renderStats(); checkAchievements(); saveState();
+  }
+
+  function shake(el){
+    el.animate([{transform:'translateX(0)'},{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'translateX(0)'}],{duration:200});
+  }
+
+  function clickCoin(e){
+    const gain = perClick();
+    earn(gain);
+    state.clicks++;
+    coinWrap.classList.remove('pop');
+    void coinWrap.offsetWidth;
+    coinWrap.classList.add('pop');
+    const rect = coinWrap.getBoundingClientRect();
+    const ft = document.createElement('div');
+    ft.className = 'float-text';
+    ft.textContent = '+' + fmt(gain);
+    const x = (e.clientX || (rect.left + rect.width/2)) - rect.left;
+    const y = (e.clientY || (rect.top + rect.height/2)) - rect.top;
+    ft.style.left = x + 'px';
+    ft.style.top = (y - 20) + 'px';
+    coinWrap.appendChild(ft);
+    setTimeout(() => ft.remove(), 1000);
+    renderStats(); renderShop();
+  }
+  coinWrap.addEventListener('pointerdown', clickCoin);
+
+  function checkAchievements(){
+    ACHIEVEMENTS.forEach(a => {
+      if (!state.achievements[a.id] && a.check(state)){
+        state.achievements[a.id] = true;
+        toast(a.title, a.desc);
+        saveState();
+      }
+    });
+  }
+  function toast(title, sub){
+    const box = $('toasts');
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.innerHTML = title + (sub ? `<small>${sub}</small>` : '');
+    box.appendChild(t);
+    setTimeout(() => t.remove(), 3100);
+  }
+
+  // ================= GOLDEN COIN =================
+  const GOLDEN_SVG = `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="gf" cx="35%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#fffbe0"/><stop offset="45%" stop-color="#ffd700"/><stop offset="100%" stop-color="#b8860b"/>
+    </radialGradient></defs>
+    <circle cx="100" cy="100" r="90" fill="url(#gf)" stroke="#fff176" stroke-width="6"/>
+    <text x="100" y="132" text-anchor="middle" font-size="90" fill="#8a5d00" font-family="Rubik">★</text>
+  </svg>`;
+
+  function spawnGolden(){
+    const g = document.createElement('div');
+    g.className = 'golden';
+    g.innerHTML = GOLDEN_SVG;
+    g.style.left = (8 + Math.random() * 78) + 'vw';
+    g.style.top  = (10 + Math.random() * 70) + 'vh';
+    g.addEventListener('click', () => {
+      const bonus = Math.max(50, Math.floor(perSec() * 30 + perClick() * 25));
+      earn(bonus);
+      state.goldenClicked++;
+      goldenFrenzyUntil = Date.now() + cfg.settings.frenzyDur * 1000;
+      toast('✨ Золотая монета!', '+' + fmt(bonus) + ' монет и x' + cfg.settings.frenzyMult + ' на ' + cfg.settings.frenzyDur + ' секунд!');
+      g.remove();
+      checkAchievements(); renderStats(); saveState();
+    });
+    document.body.appendChild(g);
+    setTimeout(() => g.remove(), 8000);
+  }
+  function scheduleGolden(){
+    const min = Math.max(5, cfg.settings.goldenMin);
+    const max = Math.max(min, cfg.settings.goldenMax);
+    const delay = (min + Math.random() * (max - min)) * 1000;
+    setTimeout(() => { spawnGolden(); scheduleGolden(); }, delay);
+  }
+
+  // ================= SHOP TABS =================
+  function bindTab(tabEl, name){
+    tabEl.addEventListener('click', () => {
+      activeTab = name;
+      $('tabAuto').classList.toggle('active', name === 'auto');
+      $('tabClick').classList.toggle('active', name === 'click');
+      renderShop();
+    });
+  }
+  bindTab($('tabAuto'), 'auto');
+  bindTab($('tabClick'), 'click');
+
+  // ================= BUY AMOUNT SELECTOR =================
+  document.querySelectorAll('.ba-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ba-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const v = btn.dataset.amt;
+      buyAmount = (v === 'max') ? 'max' : parseInt(v, 10);
+      renderShop();
+      saveState();
+    });
+  });
+  (function restoreBuyAmount(){
+    const v = String(buyAmount);
+    document.querySelectorAll('.ba-btn').forEach(b => b.classList.toggle('active', b.dataset.amt === v));
+  })();
+
+  // ================= КНОПКА СБРОСА ИГРЫ =================
+  $('resetBtn').addEventListener('click', async () => {
+    const ok = await askConfirm(
+      'Сбросить игру?',
+      'Все монеты, уровень, достижения и купленные улучшения будут удалены безвозвратно. Настройки админ-панели останутся.',
+      'Да, сбросить всё',
+      '🔄'
+    );
+    if (!ok) return;
+    const keepBuy = buyAmount;
+    state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    state.buyAmount = keepBuy;
+    buyAmount = keepBuy;
+    goldenFrenzyUntil = 0;
+    try { localStorage.removeItem('goldClickerSave'); } catch(e){}
+    saveState();
+    renderShop();
+    renderStats();
+    toast('🔄 Игра сброшена!', 'Начни путь к богатству заново');
+  });
+
+  // ================= ADMIN PANEL =================
+  const overlay = $('adminOverlay');
+  function openAdmin(){ fillSettingsInputs(); renderAdminTables(); overlay.classList.add('open'); }
+  function closeAdmin(){ overlay.classList.remove('open'); }
+
+  $('adminFab').addEventListener('click', openAdmin);
+  $('adminClose').addEventListener('click', closeAdmin);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeAdmin(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !confirmOverlay.classList.contains('open')) closeAdmin();
+    if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a' || e.code === 'KeyA')){ e.preventDefault(); overlay.classList.contains('open') ? closeAdmin() : openAdmin(); }
+  });
+
+  document.querySelectorAll('.admin-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+      $('sec-' + tab.dataset.sec).classList.add('active');
+    });
+  });
+
+  const SETTING_FIELDS = [
+    ['cfgBaseClick',   'baseClick',   v => Math.max(1, v)],
+    ['cfgGoldMin',     'goldenMin',   v => Math.max(5, v)],
+    ['cfgGoldMax',     'goldenMax',   v => Math.max(5, v)],
+    ['cfgFrenzyMult',  'frenzyMult',  v => Math.max(1, v)],
+    ['cfgFrenzyDur',   'frenzyDur',   v => Math.max(1, v)],
+    ['cfgLevelBase',   'levelBase',   v => Math.max(10, v)],
+    ['cfgLevelGrowth', 'levelGrowth', v => Math.max(1, v)],
+    ['cfgMaxBuy',      'maxBuy',      v => Math.max(1, Math.floor(v))]
+  ];
+  function fillSettingsInputs(){
+    SETTING_FIELDS.forEach(([id, key]) => { $(id).value = cfg.settings[key]; });
+  }
+  SETTING_FIELDS.forEach(([id, key, clamp]) => {
+    $(id).addEventListener('change', () => {
+      const v = parseFloat($(id).value);
+      cfg.settings[key] = isNaN(v) ? DEFAULT_CFG.settings[key] : clamp(v);
+      $(id).value = cfg.settings[key];
+      saveCfg(); renderStats(); renderShop();
+    });
+  });
+
+  $('saveCfgBtn').addEventListener('click', () => { saveCfg(); saveState(); toast('💾 Настройки сохранены'); });
+
+  function parseBigInput(str){
+    str = String(str).trim().replace(/\s/g, '').replace(',', '.');
+    const v = Number(str);
+    if (!isNaN(v) && isFinite(v) && v > 0) return Math.floor(v);
+    return NaN;
+  }
+  $('grantBtn').addEventListener('click', () => {
+    const v = parseBigInput($('grantAmount').value);
+    if (isNaN(v)){ toast('⚠️ Введи корректное число', 'Можно в научной нотации, например 1e21'); return; }
+    earn(v);
+    $('grantAmount').value = '';
+    renderStats(); renderShop(); saveState();
+    toast('💰 Выдано ' + fmt(v) + ' монет');
+  });
+
+  $('maxAllBtn').addEventListener('click', () => {
+    [...cfg.auto, ...cfg.click].forEach(u => { state.upgrades[u.id] = count(u.id) + 10; });
+    renderStats(); renderShop(); renderAdminTables(); saveState();
+    toast('🎁 Все улучшения +10!');
+  });
+
+  $('resetCfgBtn').addEventListener('click', async () => {
+    const ok = await askConfirm('Сбросить настройки?', 'Все параметры админ-панели вернутся к стандартным значениям.', 'Сбросить настройки', '♻️');
+    if (!ok) return;
+    cfg = JSON.parse(JSON.stringify(DEFAULT_CFG));
+    saveCfg(); fillSettingsInputs(); renderAdminTables(); renderShop(); renderStats();
+    toast('♻️ Настройки сброшены к дефолтным');
+  });
+
+  $('wipeBtn').addEventListener('click', async () => {
+    const ok = await askConfirm(
+      'ПОЛНЫЙ сброс игры?',
+      'Будет удалено всё: прогресс, монеты, достижения И настройки админ-панели. Это действие необратимо!',
+      'Удалить всё',
+      '🗑️'
+    );
+    if (!ok) return;
+    try {
+      localStorage.removeItem('goldClickerSave');
+      localStorage.removeItem('goldClickerAdminCfg');
+    } catch(e){}
+    cfg = JSON.parse(JSON.stringify(DEFAULT_CFG));
+    state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    goldenFrenzyUntil = 0;
+    buyAmount = 1;
+    document.querySelectorAll('.ba-btn').forEach(b => b.classList.toggle('active', b.dataset.amt === '1'));
+    fillSettingsInputs(); renderAdminTables(); renderShop(); renderStats();
+    toast('🗑️ Игра полностью сброшена');
+  });
+
+  // ----- upgrade tables -----
+  function renderAdminTables(){
+    renderUpTable($('autoTable'), cfg.auto, 'auto');
+    renderUpTable($('clickTable'), cfg.click, 'click');
+  }
+
+  function renderUpTable(table, list, type){
+    const valLabel = type === 'auto' ? 'Доход /сек' : 'Сила клика';
+    table.innerHTML = `
+      <thead><tr>
+        <th></th><th>Название</th><th>Цена</th><th>Рост %</th><th>${valLabel}</th><th>Вкл</th><th></th>
+      </tr></thead><tbody></tbody>`;
+    const tbody = table.querySelector('tbody');
+    list.forEach((u, idx) => {
+      const tr = document.createElement('tr');
+      tr.className = 'up-row' + (u.enabled === false ? ' disabled' : '');
+      const valKey = type === 'auto' ? 'rate' : 'power';
+      tr.innerHTML = `
+        <td><input type="text" class="ic-in" value="${u.icon || ''}" title="Иконка (эмодзи)"></td>
+        <td><input type="text" class="name-in" value="${u.name}"></td>
+        <td><input type="text" class="num-in base-in" value="${u.base}" title="Можно 1e9, 5e12..."></td>
+        <td><input type="number" class="num-in growth-in" min="100" max="500" step="1" value="${Math.round((u.growth || 1.15) * 100)}"></td>
+        <td><input type="text" class="num-in val-in" value="${u[valKey] || 0}" title="Можно 1e6, 8e7..."></td>
+        <td><label class="switch"><input type="checkbox" class="en-in" ${u.enabled !== false ? 'checked' : ''}><span class="slider"></span></label></td>
+        <td><button class="up-del" title="Удалить кнопку">🗑</button></td>`;
+
+      const commit = () => {
+        u.icon   = tr.querySelector('.ic-in').value.trim() || '🔘';
+        u.name   = tr.querySelector('.name-in').value.trim() || 'Без имени';
+        const b  = parseBigInput(tr.querySelector('.base-in').value);
+        u.base   = isNaN(b) || b < 1 ? 1 : b;
+        const g  = parseFloat(tr.querySelector('.growth-in').value);
+        u.growth = (isNaN(g) || g < 100 ? 115 : g) / 100;
+        const v  = parseBigInput(tr.querySelector('.val-in').value);
+        u[valKey] = isNaN(v) || v < 0 ? 0 : v;
+        u.enabled = tr.querySelector('.en-in').checked;
+        tr.classList.toggle('disabled', !u.enabled);
+        saveCfg(); renderShop(); renderStats();
+      };
+      tr.querySelectorAll('input').forEach(inp => {
+        inp.addEventListener('change', commit);
+        inp.addEventListener('input', () => { if (inp.type === 'checkbox' || inp.classList.contains('ic-in')) commit(); });
+      });
+      tr.querySelector('.up-del').addEventListener('click', async () => {
+        const ok = await askConfirm('Удалить кнопку?', `«${u.name}» будет удалена из магазина навсегда.`, 'Удалить', '🗑️');
+        if (!ok) return;
+        list.splice(idx, 1);
+        delete state.upgrades[u.id];
+        saveCfg(); saveState(); renderAdminTables(); renderShop(); renderStats();
+        toast('🗑 Кнопка удалена');
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  function addUpgrade(type){
+    const list = type === 'auto' ? cfg.auto : cfg.click;
+    const valKey = type === 'auto' ? 'rate' : 'power';
+    const u = {
+      id: 'custom_' + Date.now().toString(36),
+      icon: type === 'auto' ? '⚙️' : '✨',
+      name: 'Новая кнопка',
+      base: 100,
+      growth: 1.15,
+      enabled: true
+    };
+    u[valKey] = 5;
+    list.push(u);
+    saveCfg(); renderAdminTables(); renderShop();
+    toast('➕ Новая кнопка добавлена', 'Отредактируй её параметры в таблице');
+  }
+  $('addAutoBtn').addEventListener('click', () => addUpgrade('auto'));
+  $('addClickBtn').addEventListener('click', () => addUpgrade('click'));
+
+  // ================= GAME LOOP =================
+  let lastTick = Date.now();
+  setInterval(() => {
+    const now = Date.now();
+    const dt = (now - lastTick) / 1000;
+    lastTick = now;
+    const income = perSec() * dt;
+    if (income > 0) earn(income);
+    renderStats();
+  }, 200);
+  setInterval(() => renderShop(), 1000);
+  setInterval(saveState, 5000);
+
+  // ================= INIT =================
+  renderShop();
+  renderStats();
+  scheduleGolden();
+  checkAchievements();
+})();
+</script>
+</body>
+</html>
