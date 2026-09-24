@@ -135,15 +135,6 @@
   .item-cost { font-size: 13px; color: var(--gold); font-weight: 700; margin-top: 3px; }
   .item-count { font-size: 20px; font-weight: 700; color: rgba(255,255,255,0.25); min-width: 30px; text-align: right; }
 
-  .reset-btn {
-    margin-top: 14px; background: rgba(248,113,113,.08);
-    border: 1px solid rgba(248,113,113,.35); color: var(--red);
-    font-family: inherit; padding: 10px; border-radius: 10px;
-    font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s; width: 100%;
-  }
-  .reset-btn:hover { background: rgba(248,113,113,.22); border-color: var(--red); transform: translateY(-1px); }
-  .reset-btn:active { transform: scale(.98); }
-
   /* ===== Toasts ===== */
   #toasts { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 200; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
   .toast { background: linear-gradient(135deg, #312e81, #4c1d95); border: 1px solid var(--accent); padding: 12px 22px; border-radius: 14px; font-size: 14px; font-weight: 700; box-shadow: 0 8px 30px rgba(0,0,0,.5); animation: toastIn .35s ease, toastOut .4s ease 2.6s forwards; text-align:center; }
@@ -366,7 +357,6 @@
       <button class="ba-btn" data-amt="max">MAX</button>
     </div>
     <div class="items" id="items"></div>
-    <button class="reset-btn" id="resetBtn">🔄 Сбросить игру</button>
   </aside>
 </div>
 
@@ -864,27 +854,6 @@
     const v = String(buyAmount);
     document.querySelectorAll('.ba-btn').forEach(b => b.classList.toggle('active', b.dataset.amt === v));
   })();
-
-  // ================= КНОПКА СБРОСА ИГРЫ =================
-  $('resetBtn').addEventListener('click', async () => {
-    const ok = await askConfirm(
-      'Сбросить игру?',
-      'Все монеты, уровень, достижения и купленные улучшения будут удалены безвозвратно. Настройки админ-панели останутся.',
-      'Да, сбросить всё',
-      '🔄'
-    );
-    if (!ok) return;
-    const keepBuy = buyAmount;
-    state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-    state.buyAmount = keepBuy;
-    buyAmount = keepBuy;
-    goldenFrenzyUntil = 0;
-    try { localStorage.removeItem('goldClickerSave'); } catch(e){}
-    saveState();
-    renderShop();
-    renderStats();
-    toast('🔄 Игра сброшена!', 'Начни путь к богатству заново');
-  });
 
   // ================= ADMIN PANEL =================
   const overlay = $('adminOverlay');
