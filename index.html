@@ -135,6 +135,19 @@
   .item-cost { font-size: 13px; color: var(--gold); font-weight: 700; margin-top: 3px; }
   .item-count { font-size: 20px; font-weight: 700; color: rgba(255,255,255,0.25); min-width: 30px; text-align: right; }
 
+  /* ===== Achievements ===== */
+  .achievement { display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.28); border: 1px solid var(--card-border); border-radius: 14px; padding: 12px; transition: all .18s; }
+  .achievement.unlocked { background: linear-gradient(135deg, rgba(74,222,128,.15), rgba(255,200,61,.1)); border-color: rgba(74,222,128,.4); }
+  .achievement.unlocked:hover { border-color: var(--green); transform: translateX(2px); }
+  .achievement-icon { width: 50px; height: 50px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; background: linear-gradient(135deg, rgba(167,139,250,.25), rgba(255,200,61,.15)); border: 1px solid var(--card-border); border-radius: 12px; }
+  .achievement.unlocked .achievement-icon { background: linear-gradient(135deg, rgba(74,222,128,.3), rgba(255,200,61,.2)); border-color: var(--green); }
+  .achievement-info { flex: 1; min-width: 0; }
+  .achievement-title { font-size: 14px; font-weight: 700; }
+  .achievement.unlocked .achievement-title { color: var(--green); }
+  .achievement-desc { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+  .achievement-reward { font-size: 12px; color: var(--gold); font-weight: 700; margin-top: 4px; }
+  .achievement-status { font-size: 20px; min-width: 30px; text-align: right; }
+
   /* ===== Toasts ===== */
   #toasts { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 200; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
   .toast { background: linear-gradient(135deg, #312e81, #4c1d95); border: 1px solid var(--accent); padding: 12px 22px; border-radius: 14px; font-size: 14px; font-weight: 700; box-shadow: 0 8px 30px rgba(0,0,0,.5); animation: toastIn .35s ease, toastOut .4s ease 2.6s forwards; text-align:center; }
@@ -349,6 +362,7 @@
     <div class="tabs">
       <div class="tab active" data-tab="auto" id="tabAuto">⚙️ Автодоход</div>
       <div class="tab" data-tab="click" id="tabClick">👆 Сила клика</div>
+      <div class="tab" data-tab="achievements" id="tabAchievements">🏆 Достижения</div>
     </div>
     <div class="buy-amount" id="buyAmount">
       <span class="ba-label">Покупка:</span>
@@ -507,7 +521,7 @@
     ]
   };
 
-  const DEFAULT_STATE = { coins:0, totalEarned:0, clicks:0, level:1, upgrades:{}, achievements:{}, goldenClicked:0, buyAmount:1 };
+  const DEFAULT_STATE = { coins:0, totalEarned:0, clicks:0, level:1, upgrades:{}, achievements:{}, goldenClicked:0, buyAmount:1, achievementBonuses:{clickPower:0, perSec:0} };
 
   let cfg = loadCfg();
   let state = loadState();
@@ -606,29 +620,59 @@
 
   function frenzyMult(){ return Date.now() < goldenFrenzyUntil ? cfg.settings.frenzyMult : 1; }
   function perClick(){
-    let p = cfg.settings.baseClick;
+    let p = cfg.settings.baseClick + (state.achievementBonuses.clickPower || 0);
     cfg.click.forEach(u => { if (u.enabled !== false) p += count(u.id) * (u.power || 0); });
     return Math.max(1, Math.floor(p * frenzyMult()));
   }
   function perSec(){
-    let s = 0;
+    let s = state.achievementBonuses.perSec || 0;
     cfg.auto.forEach(u => { if (u.enabled !== false) s += count(u.id) * (u.rate || 0); });
     return Math.floor(s * frenzyMult());
   }
   function levelGoal(lvl){ return Math.max(1, Math.floor(cfg.settings.levelBase * Math.pow(cfg.settings.levelGrowth, lvl - 1))); }
 
   const ACHIEVEMENTS = [
-    { id:'click100',   title:'🏆 Разминка',        desc:'100 кликов',            check: s => s.clicks >= 100 },
-    { id:'click1000',  title:'🏆 Палец-машина',    desc:'1000 кликов',           check: s => s.clicks >= 1000 },
-    { id:'coin1k',     title:'💰 Первая тысяча',   desc:'Заработай 1 000',       check: s => s.totalEarned >= 1000 },
-    { id:'coin100k',   title:'💰 Магнат',          desc:'Заработай 100 000',     check: s => s.totalEarned >= 100000 },
-    { id:'coin10m',    title:'👑 Император золота',desc:'Заработай 10 000 000',  check: s => s.totalEarned >= 10000000 },
-    { id:'coin1t',     title:'🌌 Триллионер',      desc:'Заработай 1 триллион',  check: s => s.totalEarned >= 1e12 },
-    { id:'coin1q',     title:'♾️ За гранью',        desc:'Заработай 1 квинтиллион',check: s => s.totalEarned >= 1e18 },
-    { id:'buy10',      title:'🛍️ Шопоголик',       desc:'10 покупок улучшений',  check: s => Object.values(s.upgrades).reduce((a,b)=>a+b,0) >= 10 },
-    { id:'level10',    title:'⭐ Уровень 10',      desc:'Достигни 10 уровня',    check: s => s.level >= 10 },
-    { id:'golden5',    title:'✨ Ловец удачи',     desc:'Поймай 5 золотых монет',check: s => s.goldenClicked >= 5 }
+    { id:'click100',   title:'🏆 Разминка',        desc:'100 кликов',            check: s => s.clicks >= 100, reward:{type:'coins', amount:500} },
+    { id:'click1000',  title:'🏆 Палец-машина',    desc:'1000 кликов',           check: s => s.clicks >= 1000, reward:{type:'clickPower', amount:5} },
+    { id:'click10000', title:'🏆 Кликомания',      desc:'10 000 кликов',         check: s => s.clicks >= 10000, reward:{type:'perSec', amount:50} },
+    { id:'coin1k',     title:'💰 Первая тысяча',   desc:'Заработай 1 000',       check: s => s.totalEarned >= 1000, reward:{type:'coins', amount:1000} },
+    { id:'coin100k',   title:'💰 Магнат',          desc:'Заработай 100 000',     check: s => s.totalEarned >= 100000, reward:{type:'coins', amount:10000} },
+    { id:'coin1m',     title:'💰 Миллионер',       desc:'Заработай 1 000 000',   check: s => s.totalEarned >= 1000000, reward:{type:'clickPower', amount:50} },
+    { id:'coin10m',    title:'👑 Император золота',desc:'Заработай 10 000 000',  check: s => s.totalEarned >= 10000000, reward:{type:'perSec', amount:500} },
+    { id:'coin1t',     title:'🌌 Триллионер',      desc:'Заработай 1 триллион',  check: s => s.totalEarned >= 1e12, reward:{type:'coins', amount:1e9} },
+    { id:'coin1q',     title:'♾️ За гранью',        desc:'Заработай 1 квинтиллион',check: s => s.totalEarned >= 1e18, reward:{type:'clickPower', amount:10000} },
+    { id:'buy10',      title:'🛍️ Шопоголик',       desc:'10 покупок улучшений',  check: s => Object.values(s.upgrades).reduce((a,b)=>a+b,0) >= 10, reward:{type:'coins', amount:2000} },
+    { id:'buy50',      title:'🛍️ Заядлый покупатель', desc:'50 покупок улучшений', check: s => Object.values(s.upgrades).reduce((a,b)=>a+b,0) >= 50, reward:{type:'perSec', amount:100} },
+    { id:'level10',    title:'⭐ Уровень 10',      desc:'Достигни 10 уровня',    check: s => s.level >= 10, reward:{type:'coins', amount:5000} },
+    { id:'level25',    title:'⭐⭐ Уровень 25',    desc:'Достигни 25 уровня',    check: s => s.level >= 25, reward:{type:'clickPower', amount:100} },
+    { id:'level50',    title:'⭐⭐⭐ Уровень 50',  desc:'Достигни 50 уровня',    check: s => s.level >= 50, reward:{type:'perSec', amount:1000} },
+    { id:'golden5',    title:'✨ Ловец удачи',     desc:'Поймай 5 золотых монет',check: s => s.goldenClicked >= 5, reward:{type:'coins', amount:10000} },
+    { id:'golden20',   title:'✨ Золотой охотник', desc:'Поймай 20 золотых монет',check: s => s.goldenClicked >= 20, reward:{type:'clickPower', amount:200} }
   ];
+
+  function getRewardText(reward){
+    switch(reward.type){
+      case 'coins': return '💰 +' + fmt(reward.amount) + ' монет';
+      case 'clickPower': return '👆 +' + fmt(reward.amount) + ' к силе клика';
+      case 'perSec': return '⚙️ +' + fmt(reward.amount) + ' монет/сек';
+      default: return '';
+    }
+  }
+
+  function applyAchievementReward(reward){
+    switch(reward.type){
+      case 'coins':
+        state.coins += reward.amount;
+        state.totalEarned += reward.amount;
+        break;
+      case 'clickPower':
+        state.achievementBonuses.clickPower = (state.achievementBonuses.clickPower || 0) + reward.amount;
+        break;
+      case 'perSec':
+        state.achievementBonuses.perSec = (state.achievementBonuses.perSec || 0) + reward.amount;
+        break;
+    }
+  }
 
   // ================= DOM =================
   const $ = id => document.getElementById(id);
@@ -674,6 +718,11 @@
   }
 
   function renderShop(){
+    if (activeTab === 'achievements'){
+      renderAchievements();
+      return;
+    }
+
     const list = (activeTab === 'auto' ? cfg.auto : cfg.click).filter(u => u.enabled !== false);
     itemsEl.innerHTML = '';
     if (!list.length){
@@ -699,6 +748,31 @@
         </div>
         <div class="item-count">${count(u.id)}</div>`;
       div.addEventListener('click', () => buyBulk(u, div));
+      itemsEl.appendChild(div);
+    });
+  }
+
+  function renderAchievements(){
+    itemsEl.innerHTML = '';
+    const unlocked = ACHIEVEMENTS.filter(a => state.achievements[a.id]).length;
+    const header = document.createElement('div');
+    header.style.cssText = 'text-align:center;padding:10px 0 16px;color:rgba(255,255,255,0.6);font-size:13px;';
+    header.innerHTML = `Получено достижений: <b style="color:var(--green)">${unlocked}</b> из <b>${ACHIEVEMENTS.length}</b>`;
+    itemsEl.appendChild(header);
+
+    ACHIEVEMENTS.forEach(a => {
+      const isUnlocked = state.achievements[a.id];
+      const div = document.createElement('div');
+      div.className = 'achievement' + (isUnlocked ? ' unlocked' : '');
+      
+      div.innerHTML = `
+        <div class="achievement-icon">${a.title.split(' ')[0]}</div>
+        <div class="achievement-info">
+          <div class="achievement-title">${a.title}</div>
+          <div class="achievement-desc">${a.desc}</div>
+          <div class="achievement-reward">Награда: ${getRewardText(a.reward)}</div>
+        </div>
+        <div class="achievement-status">${isUnlocked ? '✅' : '🔒'}</div>`;
       itemsEl.appendChild(div);
     });
   }
@@ -779,7 +853,8 @@
     ACHIEVEMENTS.forEach(a => {
       if (!state.achievements[a.id] && a.check(state)){
         state.achievements[a.id] = true;
-        toast(a.title, a.desc);
+        applyAchievementReward(a.reward);
+        toast(a.title, a.desc + ' | Награда: ' + getRewardText(a.reward));
         saveState();
       }
     });
@@ -833,11 +908,21 @@
       activeTab = name;
       $('tabAuto').classList.toggle('active', name === 'auto');
       $('tabClick').classList.toggle('active', name === 'click');
+      $('tabAchievements').classList.toggle('active', name === 'achievements');
+      
+      const buyAmountEl = $('buyAmount');
+      if (name === 'achievements'){
+        buyAmountEl.style.display = 'none';
+      } else {
+        buyAmountEl.style.display = 'flex';
+      }
+      
       renderShop();
     });
   }
   bindTab($('tabAuto'), 'auto');
   bindTab($('tabClick'), 'click');
+  bindTab($('tabAchievements'), 'achievements');
 
   // ================= BUY AMOUNT SELECTOR =================
   document.querySelectorAll('.ba-btn').forEach(btn => {
