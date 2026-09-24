@@ -93,8 +93,19 @@
   .shop h2 { font-size: 18px; margin-bottom: 4px; }
   .shop .sub { font-size: 12px; color: rgba(255,255,255,0.45); margin-bottom: 14px; }
   .tabs { display: flex; gap: 8px; margin-bottom: 10px; }
-  .tab { flex: 1; padding: 8px; text-align: center; font-size: 13px; background: rgba(0,0,0,0.25); border: 1px solid var(--card-border); border-radius: 10px; cursor: pointer; color: rgba(255,255,255,0.6); transition: all .2s; }
+  .tab { flex: 1; padding: 8px; text-align: center; font-size: 13px; background: rgba(0,0,0,0.25); border: 1px solid var(--card-border); border-radius: 10px; cursor: pointer; color: rgba(255,255,255,0.6); transition: all .2s; position: relative; }
   .tab.active { background: linear-gradient(135deg, rgba(167,139,250,.3), rgba(244,114,182,.25)); color: #fff; border-color: var(--accent); }
+  .tab-badge {
+    position: absolute; top: -6px; right: -6px;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: #fff; font-size: 9px; font-weight: 700;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 99px; display: none;
+    align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(245,158,11,.5);
+    animation: pulseGlow 1.5s infinite;
+  }
+  .tab-badge.on { display: flex; }
 
   .buy-amount { display: flex; gap: 6px; margin-bottom: 14px; align-items: center; }
   .buy-amount .ba-label { font-size: 11px; color: rgba(255,255,255,.45); margin-right: 2px; text-transform: uppercase; letter-spacing: .5px; }
@@ -136,22 +147,63 @@
   .item-count { font-size: 20px; font-weight: 700; color: rgba(255,255,255,0.25); min-width: 30px; text-align: right; }
 
   /* ===== Achievements ===== */
+  .ach-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; margin-bottom: 6px;
+    background: rgba(0,0,0,0.3); border: 1px solid var(--card-border);
+    border-radius: 12px; font-size: 12px; color: rgba(255,255,255,0.6);
+  }
+  .ach-header b { color: var(--green); }
+  .ach-header .pending { color: var(--gold); font-weight: 700; }
+
   .achievement { display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.28); border: 1px solid var(--card-border); border-radius: 14px; padding: 12px; transition: all .18s; }
-  .achievement.unlocked { background: linear-gradient(135deg, rgba(74,222,128,.15), rgba(255,200,61,.1)); border-color: rgba(74,222,128,.4); }
-  .achievement.unlocked:hover { border-color: var(--green); transform: translateX(2px); }
+  .achievement.unlocked { background: linear-gradient(135deg, rgba(255,200,61,.1), rgba(245,158,11,.08)); border-color: rgba(255,200,61,.45); }
+  .achievement.claimed { background: linear-gradient(135deg, rgba(74,222,128,.08), rgba(74,222,128,.04)); border-color: rgba(74,222,128,.3); }
+  .achievement.unlocked:hover { border-color: var(--gold); transform: translateX(2px); }
+  .achievement.claimed:hover { border-color: var(--green); transform: translateX(2px); }
+  .achievement.locked { opacity: .55; }
+  .achievement.claim-flash { animation: claimFlash .6s ease; }
+  @keyframes claimFlash { 0%{background:rgba(74,222,128,.5);transform:scale(1.02)} 100%{background:rgba(74,222,128,.04)} }
+
   .achievement-icon { width: 50px; height: 50px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; background: linear-gradient(135deg, rgba(167,139,250,.25), rgba(255,200,61,.15)); border: 1px solid var(--card-border); border-radius: 12px; }
-  .achievement.unlocked .achievement-icon { background: linear-gradient(135deg, rgba(74,222,128,.3), rgba(255,200,61,.2)); border-color: var(--green); }
+  .achievement.unlocked .achievement-icon { background: linear-gradient(135deg, rgba(255,200,61,.3), rgba(245,158,11,.2)); border-color: var(--gold); animation: pulseGlow 2s infinite; }
+  .achievement.claimed .achievement-icon { background: linear-gradient(135deg, rgba(74,222,128,.25), rgba(74,222,128,.15)); border-color: var(--green); }
   .achievement-info { flex: 1; min-width: 0; }
   .achievement-title { font-size: 14px; font-weight: 700; }
-  .achievement.unlocked .achievement-title { color: var(--green); }
+  .achievement.claimed .achievement-title { color: var(--green); }
+  .achievement.unlocked .achievement-title { color: var(--gold); }
   .achievement-desc { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 2px; }
   .achievement-reward { font-size: 12px; color: var(--gold); font-weight: 700; margin-top: 4px; }
+  .achievement.claimed .achievement-reward { color: var(--green); }
   .achievement-status { font-size: 20px; min-width: 30px; text-align: right; }
+
+  .claim-btn {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, rgba(255,200,61,.25), rgba(245,158,11,.2));
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+    box-shadow: 0 2px 10px rgba(255,200,61,.2);
+  }
+  .claim-btn:hover {
+    background: linear-gradient(135deg, rgba(255,200,61,.45), rgba(245,158,11,.35));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(255,200,61,.4);
+  }
+  .claim-btn:active { transform: scale(.96); }
 
   /* ===== Toasts ===== */
   #toasts { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 200; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
   .toast { background: linear-gradient(135deg, #312e81, #4c1d95); border: 1px solid var(--accent); padding: 12px 22px; border-radius: 14px; font-size: 14px; font-weight: 700; box-shadow: 0 8px 30px rgba(0,0,0,.5); animation: toastIn .35s ease, toastOut .4s ease 2.6s forwards; text-align:center; }
   .toast small { display: block; font-weight: 400; font-size: 11px; color: rgba(255,255,255,.6); margin-top: 2px; }
+  .toast.claim { background: linear-gradient(135deg, #065f46, #064e3b); border-color: var(--green); }
   @keyframes toastIn { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
   @keyframes toastOut { to{transform:translateY(20px);opacity:0} }
 
@@ -293,6 +345,8 @@
     .shop { max-height: none; }
     .up-table, .up-row, .up-toolbar { font-size: 12px; }
     .admin-panel { max-height: 92vh; }
+    .achievement { flex-wrap: wrap; }
+    .claim-btn { width: 100%; margin-top: 8px; }
   }
 </style>
 </head>
@@ -362,7 +416,10 @@
     <div class="tabs">
       <div class="tab active" data-tab="auto" id="tabAuto">⚙️ Автодоход</div>
       <div class="tab" data-tab="click" id="tabClick">👆 Сила клика</div>
-      <div class="tab" data-tab="achievements" id="tabAchievements">🏆 Достижения</div>
+      <div class="tab" data-tab="achievements" id="tabAchievements">
+        🏆 Достижения
+        <span class="tab-badge" id="achBadge">0</span>
+      </div>
     </div>
     <div class="buy-amount" id="buyAmount">
       <span class="ba-label">Покупка:</span>
@@ -452,7 +509,7 @@
 (function(){
   'use strict';
 
-  // ================= CUSTOM CONFIRM (работает в любом окружении) =================
+  // ================= CUSTOM CONFIRM =================
   const confirmOverlay = document.getElementById('confirmOverlay');
   const confirmTitleEl = document.getElementById('confirmTitle');
   const confirmTextEl  = document.getElementById('confirmText');
@@ -485,7 +542,7 @@
     }
   });
 
-  // ================= CONFIG (admin-editable) =================
+  // ================= CONFIG =================
   const DEFAULT_CFG = {
     settings: {
       baseClick: 1,
@@ -521,7 +578,7 @@
     ]
   };
 
-  const DEFAULT_STATE = { coins:0, totalEarned:0, clicks:0, level:1, upgrades:{}, achievements:{}, goldenClicked:0, buyAmount:1, achievementBonuses:{clickPower:0, perSec:0} };
+  const DEFAULT_STATE = { coins:0, totalEarned:0, clicks:0, level:1, upgrades:{}, achievements:{}, claimedRewards:{}, goldenClicked:0, buyAmount:1, achievementBonuses:{clickPower:0, perSec:0} };
 
   let cfg = loadCfg();
   let state = loadState();
@@ -548,7 +605,13 @@
   function loadState(){
     try {
       const raw = localStorage.getItem('goldClickerSave');
-      if (raw) return Object.assign({}, DEFAULT_STATE, JSON.parse(raw));
+      if (raw){
+        const parsed = JSON.parse(raw);
+        const s = Object.assign({}, DEFAULT_STATE, parsed);
+        s.claimedRewards = parsed.claimedRewards || {};
+        s.achievementBonuses = parsed.achievementBonuses || {clickPower:0, perSec:0};
+        return s;
+      }
     } catch(e){}
     return JSON.parse(JSON.stringify(DEFAULT_STATE));
   }
@@ -631,6 +694,7 @@
   }
   function levelGoal(lvl){ return Math.max(1, Math.floor(cfg.settings.levelBase * Math.pow(cfg.settings.levelGrowth, lvl - 1))); }
 
+  // ================= ACHIEVEMENTS =================
   const ACHIEVEMENTS = [
     { id:'click100',   title:'🏆 Разминка',        desc:'100 кликов',            check: s => s.clicks >= 100, reward:{type:'coins', amount:500} },
     { id:'click1000',  title:'🏆 Палец-машина',    desc:'1000 кликов',           check: s => s.clicks >= 1000, reward:{type:'clickPower', amount:5} },
@@ -671,6 +735,25 @@
       case 'perSec':
         state.achievementBonuses.perSec = (state.achievementBonuses.perSec || 0) + reward.amount;
         break;
+    }
+  }
+
+  function countPendingRewards(){
+    let n = 0;
+    ACHIEVEMENTS.forEach(a => {
+      if (state.achievements[a.id] && !state.claimedRewards[a.id]) n++;
+    });
+    return n;
+  }
+
+  function updateAchBadge(){
+    const pending = countPendingRewards();
+    const badge = $('achBadge');
+    if (pending > 0){
+      badge.textContent = pending;
+      badge.classList.add('on');
+    } else {
+      badge.classList.remove('on');
     }
   }
 
@@ -755,26 +838,89 @@
   function renderAchievements(){
     itemsEl.innerHTML = '';
     const unlocked = ACHIEVEMENTS.filter(a => state.achievements[a.id]).length;
+    const claimed = ACHIEVEMENTS.filter(a => state.claimedRewards[a.id]).length;
+    const pending = countPendingRewards();
+
     const header = document.createElement('div');
-    header.style.cssText = 'text-align:center;padding:10px 0 16px;color:rgba(255,255,255,0.6);font-size:13px;';
-    header.innerHTML = `Получено достижений: <b style="color:var(--green)">${unlocked}</b> из <b>${ACHIEVEMENTS.length}</b>`;
+    header.className = 'ach-header';
+    header.innerHTML = `
+      <span>Получено: <b>${unlocked}</b> из ${ACHIEVEMENTS.length}</span>
+      ${pending > 0 ? `<span class="pending">🎁 Ждут награды: ${pending}</span>` : `<span style="color:var(--green)">✅ Все награды забраны</span>`}`;
     itemsEl.appendChild(header);
 
     ACHIEVEMENTS.forEach(a => {
       const isUnlocked = state.achievements[a.id];
+      const isClaimed = state.claimedRewards[a.id];
       const div = document.createElement('div');
-      div.className = 'achievement' + (isUnlocked ? ' unlocked' : '');
       
+      let stateClass = 'locked';
+      if (isClaimed) stateClass = 'claimed';
+      else if (isUnlocked) stateClass = 'unlocked';
+      
+      div.className = 'achievement ' + stateClass;
+      div.dataset.achId = a.id;
+      
+      let statusHtml = '';
+      let actionHtml = '';
+      
+      if (isClaimed){
+        statusHtml = '✅';
+        actionHtml = '';
+      } else if (isUnlocked){
+        statusHtml = '🎁';
+        actionHtml = `<button class="claim-btn" data-claim="${a.id}">Забрать</button>`;
+      } else {
+        statusHtml = '🔒';
+        actionHtml = '';
+      }
+
       div.innerHTML = `
         <div class="achievement-icon">${a.title.split(' ')[0]}</div>
         <div class="achievement-info">
           <div class="achievement-title">${a.title}</div>
           <div class="achievement-desc">${a.desc}</div>
-          <div class="achievement-reward">Награда: ${getRewardText(a.reward)}</div>
+          <div class="achievement-reward">${isClaimed ? '✅ Награда получена: ' : '🎁 Награда: '}${getRewardText(a.reward)}</div>
         </div>
-        <div class="achievement-status">${isUnlocked ? '✅' : '🔒'}</div>`;
+        <div class="achievement-status">${statusHtml}</div>
+        ${actionHtml}`;
+      
       itemsEl.appendChild(div);
     });
+
+    // Bind claim buttons
+    itemsEl.querySelectorAll('.claim-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const achId = btn.dataset.claim;
+        claimReward(achId, btn);
+      });
+    });
+  }
+
+  function claimReward(achId, btnEl){
+    const ach = ACHIEVEMENTS.find(a => a.id === achId);
+    if (!ach || !state.achievements[achId] || state.claimedRewards[achId]) return;
+    
+    applyAchievementReward(ach.reward);
+    state.claimedRewards[achId] = true;
+    
+    // Flash animation
+    const row = btnEl.closest('.achievement');
+    if (row){
+      row.classList.add('claimed');
+      row.classList.remove('unlocked');
+      row.classList.add('claim-flash');
+      setTimeout(() => row.classList.remove('claim-flash'), 600);
+    }
+    
+    toast('🎁 Награда получена!', ach.title + ' — ' + getRewardText(ach.reward), true);
+    
+    updateAchBadge();
+    renderStats();
+    saveState();
+    
+    // Re-render after short delay for smooth transition
+    setTimeout(() => renderAchievements(), 300);
   }
 
   function earn(amount){
@@ -850,19 +996,24 @@
   coinWrap.addEventListener('pointerdown', clickCoin);
 
   function checkAchievements(){
+    let newUnlocked = false;
     ACHIEVEMENTS.forEach(a => {
       if (!state.achievements[a.id] && a.check(state)){
         state.achievements[a.id] = true;
-        applyAchievementReward(a.reward);
-        toast(a.title, a.desc + ' | Награда: ' + getRewardText(a.reward));
-        saveState();
+        toast(a.title, '🎁 Забери награду: ' + getRewardText(a.reward));
+        newUnlocked = true;
       }
     });
+    if (newUnlocked){
+      updateAchBadge();
+      if (activeTab === 'achievements') renderAchievements();
+      saveState();
+    }
   }
-  function toast(title, sub){
+  function toast(title, sub, isClaim){
     const box = $('toasts');
     const t = document.createElement('div');
-    t.className = 'toast';
+    t.className = 'toast' + (isClaim ? ' claim' : '');
     t.innerHTML = title + (sub ? `<small>${sub}</small>` : '');
     box.appendChild(t);
     setTimeout(() => t.remove(), 3100);
@@ -1033,6 +1184,7 @@
     buyAmount = 1;
     document.querySelectorAll('.ba-btn').forEach(b => b.classList.toggle('active', b.dataset.amt === '1'));
     fillSettingsInputs(); renderAdminTables(); renderShop(); renderStats();
+    updateAchBadge();
     toast('🗑️ Игра полностью сброшена');
   });
 
@@ -1120,7 +1272,10 @@
     if (income > 0) earn(income);
     renderStats();
   }, 200);
-  setInterval(() => renderShop(), 1000);
+  setInterval(() => {
+    renderShop();
+    updateAchBadge();
+  }, 1000);
   setInterval(saveState, 5000);
 
   // ================= INIT =================
@@ -1128,6 +1283,7 @@
   renderStats();
   scheduleGolden();
   checkAchievements();
+  updateAchBadge();
 })();
 </script>
 </body>
